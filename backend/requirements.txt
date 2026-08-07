@@ -1,0 +1,24 @@
+# ── Web Framework ─────────────────────────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+
+# ── Database ───────────────────────────────────────────────────────────────────
+sqlalchemy==2.0.51
+psycopg2-binary==2.9.12        # PostgreSQL driver (Supabase)
+
+# ── Validation & Serialization ─────────────────────────────────────────────────
+pydantic[email]==2.13.4
+
+# ── File Upload & Environment ──────────────────────────────────────────────────
+python-multipart==0.0.9        # required for FastAPI UploadFile
+python-dotenv==1.2.2           # loads .env variables
+
+# ── AI / LLM (Part 3) ─────────────────────────────────────────────────────────
+groq                           # Groq free-tier LLM client
+sentence-transformers==3.0.0   # local semantic search
+
+# ── ML / Numerical ────────────────────────────────────────────────────────────
+# CPU-only torch — avoids pulling the ~2GB CUDA build on Render free tier
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.3.1+cpu
+numpy<2.0.0                    # sentence-transformers 3.0 requires numpy <2

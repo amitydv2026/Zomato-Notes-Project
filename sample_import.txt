@@ -1,0 +1,23 @@
+# ── Format 1: Explicit Title + Content (pipe separator) ──────────────────────
+# Use this when you want full control over both fields.
+# Syntax: Title: <your title> | Content: <your content>
+
+Title: DB Migration v2.1 | Content: Database migration completed successfully for v2.1 schema changes. All foreign key constraints verified and indexes rebuilt.
+Title: Payment Gateway Fix | Content: Incident resolved — payment gateway timeout fixed by increasing connection pool size from 10 to 50. Monitor for 24h.
+Title: Deploy Pipeline Update | Content: Deploy pipeline updated to include automated rollback on health-check failure. Tested on staging successfully.
+
+# ── Format 2: Colon separator (label: description) ───────────────────────────
+# Text before the first colon becomes the title. Full line becomes content.
+
+On-call handover: Monitor Redis memory usage — currently at 78 percent capacity. Alert threshold set at 85 percent.
+Alert rule added: API p99 latency exceeding 500ms across all regions now triggers PagerDuty P2 incident.
+Post-mortem drafted: Last Friday's search-service outage caused by OOM in indexer pod. Review by Thursday EOD.
+Runbook updated: Added steps for rotating database credentials without downtime.
+Deployment scheduled: v3.4.1 rolling out to production Friday 11pm IST. Requires config map update first.
+
+# ── Format 3: Plain sentences (first 6 words auto-become title) ──────────────
+# No special format needed. Just write naturally.
+
+The payments API was down for 12 minutes due to a misconfigured rate limit on the gateway. Root cause identified and fixed.
+Redis cache hit rate dropped below 60 percent after the new feature flag rollout. Investigating memory fragmentation as possible cause.
+Weekly standup notes — team discussed sprint velocity, blockers on the search feature, and upcoming on-call rotation schedule.

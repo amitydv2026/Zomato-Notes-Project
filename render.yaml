@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: zomato-notes-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
+
+    envVars:
+      # ── Set these in the Render dashboard (do NOT commit real values) ──────
+      - key: DATABASE_URL
+        sync: false          # paste your Supabase connection string in Render UI
+
+      - key: SECRET_TOKEN
+        sync: false          # paste a strong random token in Render UI
+
+      # ── CORS: add your GitHub Pages URL here after deploying frontend ──────
+      - key: ALLOWED_ORIGINS
+        sync: false          # e.g. https://yourusername.github.io
+
+      # ── AI service ────────────────────────────────────────────────────────
+      - key: MOCK_AI
+        value: "0"           # 0 = real Groq LLM, 1 = offline mock
+
+      - key: AI_API_KEY
+        sync: false          # paste your Groq API key in Render UI
