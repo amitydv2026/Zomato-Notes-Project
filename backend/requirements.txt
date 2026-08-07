@@ -20,5 +20,5 @@ sentence-transformers==3.0.0   # local semantic search
 # ── ML / Numerical ────────────────────────────────────────────────────────────
 # CPU-only torch — avoids pulling the ~2GB CUDA build on Render free tier
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.3.1+cpu
+torch==2.13.0+cpu
 numpy<2.0.0                    # sentence-transformers 3.0 requires numpy <2
