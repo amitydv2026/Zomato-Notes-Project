@@ -3,6 +3,8 @@ services:
     name: zomato-notes-backend
     runtime: python
     rootDir: backend
+    # Note: rootDir is relative to the repo root.
+    # Since this render.yaml sits at repo root alongside /backend, this is correct.
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     plan: free
