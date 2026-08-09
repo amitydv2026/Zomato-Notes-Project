@@ -21,13 +21,13 @@ Capstone project: a full-stack notes app for Zomato's on-call support engineerin
 
 ```bash
 git clone <your-repo-url>
-cd zomato-notes
+cd zomato-notes-project
 ```
 
 ### 2. Create a virtual environment
 
 ```bash
-cd zomato-notes/backend
+cd zomato-notes-project/backend
 python -m venv venv
 # Windows
 venv\Scripts\activate
@@ -35,22 +35,21 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-### 3. Install dependencies
+### 3. Install dependencies For Python version - 3.14.6
+
 
 ```bash
 pip install -r requirements.txt
+
+if you face error then Use python version 3.14.6 while installing  dependencies
 ```
 
 ### 4. Configure environment variables
 
-```bash
-cp .env.example .env
+create .env file inside the backend folder , you can prefer .env.example file
 # Edit .env — fill in your Supabase DATABASE_URL, SECRET_TOKEN, AI_API_KEY and keep MOCK_AI=0 for better ai response or you can use MOCK_AI = 1
 
-```
 
-`.env` contents (example):
-```
 #use This SECRET_TOKEN, copy from here and paste in your .env file
 SECRET_TOKEN=secret-token
 
@@ -105,11 +104,12 @@ Interactive docs: `http://127.0.0.1:8000/docs`
 ### 7. Serve the frontend
 
 Open `frontend/auth.html` with VS Code Live Server
-( http://127.0.0.1:5500 ) or any static server:
+  
 
+Or serve the  frontend using this commands
 ```bash
 # Using Python's built-in server from the frontend/ folder
-cd zomato-notes/frontend
+cd zomato-notes-project/frontend
 python -m http.server 5500
 ``` 
 
@@ -118,6 +118,7 @@ Then open `http://127.0.0.1:5500/auth.html` in your browser.
 **Login with demo credentials:**
 - Email: `alice@example.com` / Password: `alicepass123`
 - Email: `bob@example.com` / Password: `bobpass123`
+
 
 Or create a new account via the **Sign Up** tab.
 
