@@ -21,7 +21,6 @@ Capstone project: a full-stack notes app for Zomato's on-call support engineerin
 
 ```bash
 git clone <your-repo-url>
-cd zomato-notes-project
 ```
 
 ### 2. Create a virtual environment
@@ -40,9 +39,9 @@ source venv/bin/activate
 
 ```bash
 pip install -r requirements.txt
-
-if you face error then Use python version 3.14.6 while installing  dependencies
 ```
+if you face error then Use python version 3.14.6 while installing  dependencies
+
 
 ### 4. Configure environment variables
 
