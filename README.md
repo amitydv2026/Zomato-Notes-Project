@@ -103,13 +103,15 @@ Expected output:
 uvicorn main:app --reload --port 8000
 ```
 
+
 Backend is live at: `http://127.0.0.1:8000`
 Interactive docs: `http://127.0.0.1:8000/docs`
 
 ### 7. Serve the frontend
 
 Open `frontend/auth.html` with VS Code Live Server
-  
+
+Wait Until the Website fully loads.
 
 Or serve the  frontend using this commands
 ```bash
