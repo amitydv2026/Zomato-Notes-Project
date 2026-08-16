@@ -42,7 +42,13 @@ pip install -r requirements.txt
 ```
 if you face error then Use python version 3.14.6 while installing  dependencies
 
+Or install your compatible python version dependencies
 
+And Run again this command
+
+```bash
+pip install -r requirements.txt
+```
 ### 4. Configure environment variables
 
 create .env file inside the backend folder , you can prefer .env.example file
