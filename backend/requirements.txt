@@ -19,6 +19,12 @@ sentence-transformers==3.0.0   # local semantic search
 
 # ── ML / Numerical ────────────────────────────────────────────────────────────
 # CPU-only torch — avoids pulling the ~2GB CUDA build on Render free tier
+# ⚠ Windows users: torch has deeply nested paths that exceed Windows' 260-char
+# MAX_PATH limit when venv is inside the project folder.
+# Use a short-path venv to avoid [WinError 206]:
+#   python -m venv C:\venv
+#   C:\venv\Scripts\activate
+#   pip install -r requirements.txt
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch
 numpy>2.2,<3.0

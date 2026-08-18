@@ -46,7 +46,15 @@ Or install your compatible python version dependencies
 
 And Run again this command
 
+```bash
+pip install -r requirements.txt
+```
 Note - please make sure that you are using python compatible version for these dependencies
+
+If you face this ---
+The path length issue can't be fixed in requirements.txt — that file just lists packages, it has no control over where pip installs them. The venv location is what matters.
+
+Run the again......
 
 ```bash
 pip install -r requirements.txt
