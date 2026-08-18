@@ -3,6 +3,8 @@ Part 3 — AI Service
 get_ai_response() sends a chat-completion request to an LLM.
 When MOCK_AI=1 (env var) or --mock is passed, returns a deterministic
 offline response that requires no API key and no internet connection.
+
+Note - keep MOCK_AI=0 for better ai response or you can use MOCK_AI = 1
 """
 
 import os

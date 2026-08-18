@@ -46,6 +46,8 @@ Or install your compatible python version dependencies
 
 And Run again this command
 
+Note - please make sure that you are using python compatible version for these dependencies
+
 ```bash
 pip install -r requirements.txt
 ```

@@ -1,23 +1,23 @@
-# ── Format 1: Explicit Title + Content (pipe separator) ──────────────────────
-# Use this when you want full control over both fields.
-# Syntax: Title: <your title> | Content: <your content>
+Title: Database Connection Timeout | Content: Production database connections started timing out during peak traffic. Root cause was a connection pool limit that was too low. Pool size was increased and connection monitoring was added.
 
-Title: DB Migration v2.1 | Content: Database migration completed successfully for v2.1 schema changes. All foreign key constraints verified and indexes rebuilt.
-Title: Payment Gateway Fix | Content: Incident resolved — payment gateway timeout fixed by increasing connection pool size from 10 to 50. Monitor for 24h.
-Title: Deploy Pipeline Update | Content: Deploy pipeline updated to include automated rollback on health-check failure. Tested on staging successfully.
+Title: Login Authentication Issue | Content: Several users were unable to log in after the authentication service deployment. The issue was caused by an incorrect environment variable. The configuration was corrected and login functionality was restored.
 
-# ── Format 2: Colon separator (label: description) ───────────────────────────
-# Text before the first colon becomes the title. Full line becomes content.
+Title: API Response Time Increased | Content: API response time increased above 800ms after the latest deployment. The slow endpoint was identified using application logs and database query timing. An inefficient query was optimized and response time returned to normal.
 
-On-call handover: Monitor Redis memory usage — currently at 78 percent capacity. Alert threshold set at 85 percent.
-Alert rule added: API p99 latency exceeding 500ms across all regions now triggers PagerDuty P2 incident.
-Post-mortem drafted: Last Friday's search-service outage caused by OOM in indexer pod. Review by Thursday EOD.
-Runbook updated: Added steps for rotating database credentials without downtime.
-Deployment scheduled: v3.4.1 rolling out to production Friday 11pm IST. Requires config map update first.
+Title: Deployment Rollback | Content: Production deployment was rolled back after the health check failed repeatedly. The new release contained an incompatible configuration change. The previous stable version was restored while the configuration was reviewed.
 
-# ── Format 3: Plain sentences (first 6 words auto-become title) ──────────────
-# No special format needed. Just write naturally.
+Title: Redis Cache Memory Alert | Content: Redis memory usage reached 82 percent of the configured limit. Unused cache keys were identified and the expiration policy was updated. Memory usage returned to a normal level after cleanup.
 
-The payments API was down for 12 minutes due to a misconfigured rate limit on the gateway. Root cause identified and fixed.
-Redis cache hit rate dropped below 60 percent after the new feature flag rollout. Investigating memory fragmentation as possible cause.
-Weekly standup notes — team discussed sprint velocity, blockers on the search feature, and upcoming on-call rotation schedule.
+Title: Search Feature Bug | Content: Keyword search returned incomplete results when the search term appeared only in note content. The search logic was updated to check both title and content before calculating the relevance score.
+
+Title: Database Migration Completed | Content: Database migration for the new notes table was completed successfully. Foreign key relationships were verified and indexes were created for frequently searched columns.
+
+Title: CORS Configuration Fixed | Content: Frontend requests were blocked because the backend did not allow the deployed frontend origin. The CORS configuration was updated to allow the required origin and preflight requests completed successfully.
+
+Title: Environment Variable Missing | Content: The application failed to start because the database connection string was missing from the production environment. The required environment variable was added and the application restarted successfully.
+
+Title: Slow Database Query | Content: A notes query was taking more than two seconds because the search column did not have an appropriate index. An index was added and query execution time improved significantly.
+
+Title: API Health Check Added | Content: A health check endpoint was added to verify application availability and database connectivity. The deployment platform now uses the endpoint to determine whether the application is healthy.
+
+Title: Frontend Deployment Issue | Content: The frontend deployment displayed an outdated version after a new commit. Browser caching and deployment artifacts were checked. The cache was cleared and the latest version became available.

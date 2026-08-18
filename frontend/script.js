@@ -1,9 +1,3 @@
-/**
- * Zomato Notes — script.js
- * Wired to live FastAPI backend. Notion-style layout.
- * API_BASE and SECRET_TOKEN are defined in config.js (loaded before this file).
- */
-
 // ── Auth check ────────────────────────────────────────────────
 const userId   = localStorage.getItem("zn_user_id");
 const userName = localStorage.getItem("zn_user_name");

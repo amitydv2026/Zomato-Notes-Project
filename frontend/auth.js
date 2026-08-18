@@ -1,13 +1,3 @@
-/**
- * Zomato Notes — Auth Page Script
- * Handles Login and Signup, stores session in localStorage.
- * 
- * First-time flow: Sign Up tab shown by default → after signup, redirect
- * to login tab with a success message → user logs in explicitly.
- * Returning user flow: Sign In tab shown by default.
- *
- * API_BASE is defined in config.js (loaded before this file).
- */
 
 // ── Redirect if already logged in ─────────────────────────────────────────────
 if (localStorage.getItem("zn_user_id")) {
