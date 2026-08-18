@@ -124,7 +124,7 @@ def _real_ai_response(user_message: str, system_prompt: str) -> str:
 
     client = Groq(api_key=api_key)
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="llama-3.1-70b-versatile",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
