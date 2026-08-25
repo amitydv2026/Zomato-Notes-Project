@@ -120,9 +120,13 @@ async def _index_note_background(note_id: int):
     logger.info(f"[BackgroundTask] Note {note_id} indexed at {time.strftime('%H:%M:%S')}")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# PART 1 — Users
-# ═══════════════════════════════════════════════════════════════════════════════
+@app.get("/ping", tags=["Health"])
+def ping():
+    """Lightweight keep-alive endpoint. Used by UptimeRobot to prevent Render cold starts."""
+    return {"status": "ok"}
+
+
+
 
 @app.post("/users", response_model=schemas.UserResponse, status_code=201, tags=["Users"])
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):

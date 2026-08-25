@@ -594,7 +594,41 @@ Rules:
   }
 }
 
-// ── Data layer ────────────────────────────────────────────────
+// ── Keep Render warm — ping backend on page load ──────────────
+(function pingBackend() {
+  fetch(`${API_BASE}/ping`).catch(() => {});
+})();
+
+// ── Skeleton helpers ──────────────────────────────────────────
+function showSkeletons(count = 6) {
+  const container = document.getElementById("notes-container");
+  const loadingEl = document.getElementById("loading-msg");
+  loadingEl.style.display = "none";          // hide old spinner
+  container.innerHTML = "";
+  for (let i = 0; i < count; i++) {
+    container.innerHTML += `
+      <div class="skeleton-card">
+        <div class="skeleton-line skeleton-tag"></div>
+        <div class="skeleton-line skeleton-title"></div>
+        <div class="skeleton-line skeleton-text"></div>
+        <div class="skeleton-line skeleton-text"></div>
+        <div class="skeleton-line skeleton-text short"></div>
+        <div class="skeleton-line skeleton-text"></div>
+        <div class="skeleton-line skeleton-meta"></div>
+        <div class="skeleton-footer">
+          <div class="skeleton-line skeleton-btn"></div>
+          <div class="skeleton-line skeleton-btn"></div>
+        </div>
+      </div>`;
+  }
+}
+
+function clearSkeletons() {
+  const container = document.getElementById("notes-container");
+  container.querySelectorAll(".skeleton-card").forEach(el => el.remove());
+}
+
+
 async function fetchNotes(tag = "") {
   const url = tag ? `${API_BASE}/notes?tag=${encodeURIComponent(tag)}` : `${API_BASE}/notes`;
   const res = await fetch(url);
@@ -840,13 +874,13 @@ function buildTagNavList(notes) {
 
 // ── Load notes ────────────────────────────────────────────────
 async function loadNotes() {
-  const loadingEl = document.getElementById("loading-msg");
-  const errorEl   = document.getElementById("fetch-error");
-  loadingEl.style.display = "flex";
+  const errorEl = document.getElementById("fetch-error");
   errorEl.textContent = "";
+  showSkeletons(6);                          // show skeleton grid immediately
   try {
     const notes = await fetchNotes();
     const sorted = notes.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    clearSkeletons();
     renderNotes(sorted, "All Notes");
     buildTagNavList(sorted);
     buildAndRenderTagTree(sorted);
@@ -854,10 +888,9 @@ async function loadNotes() {
     setDashGreeting();
     updateDashStats(sorted);
   } catch(e) {
+    clearSkeletons();
     errorEl.textContent = `Failed to load notes: ${e.message}`;
     console.error("loadNotes error:", e);
-  } finally {
-    loadingEl.style.display = "none";
   }
 }
 
