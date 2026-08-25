@@ -51,8 +51,30 @@ pip install -r requirements.txt
 ```
 Note - please make sure that you are using python compatible version for these dependencies
 
-If you face this ---
+If you face this error ---
 The path length issue can't be fixed in requirements.txt — that file just lists packages, it has no control over where pip installs them. The venv location is what matters.
+
+You can run this command again
+
+```bash
+pip install -r requirements.txt
+```
+
+In case --
+Still the error is not resolved then Prefer any one option
+
+Option 1 — Enable long paths (run PowerShell as Administrator once):
+
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
+
+Then restart your terminal. After that, torch will install anywhere, including the project venv.
+
+Option 2 — Always use C:\venv (no admin needed, already working):
+
+Just activate it before running the backend:
+
+C:\venv\Scripts\activate
+C:\venv already has torch + all other dependencies installed and working. You don't need to reinstall anything.
 
 Run the again......
 
@@ -140,6 +162,25 @@ Then open `http://127.0.0.1:5500/auth.html` in your browser.
 Or create a new account via the **Sign Up** tab.
 
 ---
+
+Please wait until the website is fully loaded,my web app takes a few seconds to load.
+
+due to ---
+
+Backend side
+
+Lazy-load sentence-transformers — right now torch and the model get imported at startup. Defer them to only load when /notes/smart-search is actually called. This alone cuts cold start time significantly.
+
+Database connection pooling — Supabase free tier has connection limits. If the pool isn't configured, each request opens a new connection. Setting a small pool (2-3 connections) makes DB queries faster.
+
+Cache the /notes response in memory — notes don't change every second. A simple 30-second in-memory cache on the backend means repeated page loads skip the DB query entirely.
+
+Frontend side
+
+Cache notes in localStorage — store the last fetched notes with a timestamp. On next visit, show cached notes instantly while fetching fresh ones in the background. The page appears loaded in under 100ms.
+
+
+Ping on page load — i already have /ping added, but it needs to be called the moment the HTML loads (before script.js even runs), ideally in an inline <script> tag in <head>. This wakes Render as early as possible.
 
 ## CORS Configuration
 
