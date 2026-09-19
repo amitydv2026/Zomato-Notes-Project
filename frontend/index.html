@@ -311,7 +311,7 @@
 
         </div>
 
-        <!-- ── VIEW: AI Tools (ChatGPT-style) ───────────────── -->
+        <!-- ── VIEW: AI Assistant (General-purpose + Notes guidance) ── -->
         <div class="view" id="view-smart">
           <div class="chat-container">
 
@@ -321,47 +321,61 @@
                 <div class="chat-avatar-big">🤖</div>
                 <div>
                   <div class="chat-title">Zomato AI Assistant</div>
-                  <div class="chat-subtitle">Ask me anything about your notes</div>
+                  <div class="chat-subtitle">General-purpose AI · Note-writing expert · Always available</div>
                 </div>
               </div>
-              <button class="btn-clear-chat" id="clear-chat-btn">🗑 Clear Chat</button>
+              <button class="btn-clear-chat" id="clear-chat-btn">🗑 Clear</button>
+            </div>
+
+            <!-- Mode tabs -->
+            <div class="chat-mode-tabs">
+              <button class="chat-mode-tab active" id="tab-notes" data-mode="notes">
+                📋 Notes Assistant
+              </button>
+              <button class="chat-mode-tab" id="tab-general" data-mode="general">
+                🌐 General AI
+              </button>
             </div>
 
             <!-- Messages area -->
             <div class="chat-messages" id="chat-messages">
-              <!-- Welcome message -->
               <div class="chat-msg assistant">
                 <div class="msg-avatar">🤖</div>
                 <div class="msg-bubble">
-                  <p>Hi! I'm your Zomato Notes AI assistant. I can help you:</p>
-                  <ul>
-                    <li>Answer questions about your notes</li>
-                    <li>Suggest tags and summaries</li>
-                    <li>Help you find and organise information</li>
-                    <li>Summarise topics from your knowledge base</li>
-                  </ul>
-                  <p>What would you like to know?</p>
+                  <p><strong>Hey! I'm your Zomato Notes AI Assistant.</strong></p>
+                  <p>I work like ChatGPT — you can ask me <em>anything</em>. My speciality is helping you write better notes, but I also handle coding, writing, maths, and general knowledge.</p>
+                  <p>Try one of the quick prompts below, or just type your question ↓</p>
                 </div>
               </div>
             </div>
 
-            <!-- Suggested prompts -->
+            <!-- Suggested prompts — two rows, one per mode -->
             <div class="chat-suggestions" id="chat-suggestions">
-              <button class="suggest-btn" data-msg="Summarise my recent notes">📋 Summarise my notes</button>
-              <button class="suggest-btn" data-msg="What are the most common topics in my notes?">🏷️ Common topics</button>
-              <button class="suggest-btn" data-msg="Give me tips for better note taking during incidents">💡 Note-taking tips</button>
-              <button class="suggest-btn" data-msg="How can I organise my work notes better?">📂 Organise notes</button>
+              <!-- Notes mode suggestions (shown by default) -->
+              <div class="suggest-row" id="suggest-row-notes">
+                <button class="suggest-btn" data-msg="How do I write a good note?">✍️ How to write a note</button>
+                <button class="suggest-btn" data-msg="Give me an incident note template">🚨 Incident template</button>
+                <button class="suggest-btn" data-msg="What's the best tagging strategy for my notes?">🏷️ Tagging strategy</button>
+                <button class="suggest-btn" data-msg="How do I search my notes effectively?">🔍 Search tips</button>
+              </div>
+              <!-- General mode suggestions (hidden by default) -->
+              <div class="suggest-row" id="suggest-row-general" style="display:none">
+                <button class="suggest-btn" data-msg="Explain how binary search works with a code example">💻 Binary search explained</button>
+                <button class="suggest-btn" data-msg="Write a professional incident update email">✉️ Incident email draft</button>
+                <button class="suggest-btn" data-msg="What is the difference between TCP and UDP?">🌐 TCP vs UDP</button>
+                <button class="suggest-btn" data-msg="Give me 5 productivity tips for software engineers">🚀 Productivity tips</button>
+              </div>
             </div>
 
             <!-- Input area -->
             <div class="chat-input-area">
               <div class="chat-input-wrap">
-                <textarea id="chat-input" placeholder="Ask me anything…" rows="1"></textarea>
+                <textarea id="chat-input" placeholder="Ask me anything — notes, code, writing, maths…" rows="1"></textarea>
                 <button class="btn-send" id="chat-send-btn">
                   <span class="send-icon">➤</span>
                 </button>
               </div>
-              <p class="chat-disclaimer">AI responses are generated and may not always be accurate.</p>
+              <p class="chat-disclaimer">AI responses may not always be accurate. Verify critical information.</p>
             </div>
 
           </div>

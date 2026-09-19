@@ -1562,6 +1562,30 @@ on("chat-suggestions", "click", (e) => {
   sendChatMessage(btn.dataset.msg);
 });
 
+// ── Chat mode tabs (Notes Assistant / General AI) ─────────────
+document.querySelectorAll(".chat-mode-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    // Activate clicked tab
+    document.querySelectorAll(".chat-mode-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+
+    // Show corresponding suggest row
+    const mode = tab.dataset.mode;
+    const notesRow   = document.getElementById("suggest-row-notes");
+    const generalRow = document.getElementById("suggest-row-general");
+    if (notesRow)   notesRow.style.display   = mode === "notes"   ? "" : "none";
+    if (generalRow) generalRow.style.display = mode === "general" ? "" : "none";
+
+    // Update placeholder
+    const input = document.getElementById("chat-input");
+    if (input) {
+      input.placeholder = mode === "notes"
+        ? "Ask about note templates, tagging, search…"
+        : "Ask me anything — coding, writing, maths, general knowledge…";
+    }
+  });
+});
+
 // Clear chat
 on("clear-chat-btn", "click", () => {
   chatHistory.length = 0;

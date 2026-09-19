@@ -441,27 +441,57 @@ def user_notes_report(db: Session = Depends(get_db)):
 @app.post("/ai/chat", tags=["AI"])
 def ai_chat(request: schemas.ChatRequest):
     """
-    ChatGPT-style conversational endpoint.
+    General-purpose AI chat endpoint (ChatGPT / Claude style).
+    Primary expertise: note-writing guidance, templates, knowledge-base organisation.
+    Also handles: coding, writing, maths, and general knowledge questions.
     Accepts a user message + optional conversation history.
     Returns the AI reply as plain text.
-    Uses MOCK_AI=1 by default (offline, no API key needed).
     """
-    # Build a context-aware system prompt
     system_prompt = (
-        "You are a helpful AI assistant integrated into Zomato Notes, "
-        "an internal knowledge-base app for on-call support engineers. "
-        "Answer questions clearly and concisely. When relevant, suggest "
-        "how the user can organise or search their notes better."
+        "You are a highly capable general-purpose AI assistant — similar to ChatGPT or Claude — "
+        "integrated into Zomato Notes, an internal knowledge-base app for on-call support engineers.\n\n"
+
+        "## Primary Expertise: Note-Writing & Knowledge Management\n"
+        "Your most important skill is helping users write excellent notes. When asked about "
+        "note-writing, always provide:\n"
+        "- Concrete templates with clear sections (WHAT / WHY / HOW / RESULT)\n"
+        "- Specific examples (good title vs bad title)\n"
+        "- Tagging strategies, search tips, and knowledge-base organisation advice\n"
+        "- Incident note templates for on-call engineers when relevant\n\n"
+
+        "## General-Purpose Capabilities\n"
+        "You can also answer ANY question a user has, including:\n"
+        "- Coding: write, explain, debug code in any language or framework\n"
+        "- Writing: draft emails, summaries, documentation, rewrites\n"
+        "- Mathematics: step-by-step problem solving, algebra, statistics, logic\n"
+        "- General knowledge: science, history, technology concepts, explanations\n"
+        "- Productivity: workflows, habits, engineering best practices\n\n"
+
+        "## Response Style\n"
+        "- Be direct, clear, and thorough — like ChatGPT or Claude would be\n"
+        "- Use markdown formatting: **bold**, `code`, headers, bullet lists, numbered steps\n"
+        "- For code questions, always include a working code block\n"
+        "- For note/template questions, always include a copyable template\n"
+        "- Don't hedge excessively — give confident, actionable answers\n"
+        "- Match the user's tone: casual for casual questions, technical for technical ones\n\n"
+
+        "## About Zomato Notes (context for app-specific questions)\n"
+        "- Dashboard: view, create, edit, delete notes; filter by tag; sort by date\n"
+        "- Search view: Keyword search (insertion sort), Exact title lookup (binary search), "
+        "Quick tag jump (linear search)\n"
+        "- Smart Search: semantic similarity search using sentence-transformers\n"
+        "- AI features: auto-tagging, content suggestions, per-card AI summary\n"
+        "- Tags: work, health, recipes, travel, personal, random (all lowercase)\n"
     )
 
-    # If history provided, append it to context
-    context = ""
+    # Build conversation context from history (last 10 messages)
+    messages_for_context = ""
     if request.history:
-        for msg in request.history[-6:]:   # last 6 messages for context window
+        for msg in request.history[-10:]:
             role = "User" if msg.role == "user" else "Assistant"
-            context += f"{role}: {msg.content}\n"
-        context += f"User: {request.message}\n"
-        user_message = context
+            messages_for_context += f"{role}: {msg.content}\n"
+        messages_for_context += f"User: {request.message}"
+        user_message = messages_for_context
     else:
         user_message = request.message
 

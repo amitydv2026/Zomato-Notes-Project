@@ -1030,6 +1030,43 @@ body {
 @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
 
 /* Suggestions */
+/* Mode tabs */
+.chat-mode-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: #fafbff;
+  flex-shrink: 0;
+}
+.chat-mode-tab {
+  flex: 1;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.chat-mode-tab:hover { background: var(--accent-light); color: var(--accent); }
+.chat-mode-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: var(--accent-light);
+}
+
+/* Suggest rows */
+.suggest-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.suggest-row::-webkit-scrollbar { display: none; }
+
 .chat-suggestions {
   display: flex; gap: 8px; padding: 10px 16px;
   overflow-x: auto; scrollbar-width: none;
