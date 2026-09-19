@@ -639,7 +639,7 @@ body {
 .loading-state { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 0.88rem; padding: 20px 0; }
 .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; align-items: start; }
+.notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; align-items: start; }
 .note-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -649,9 +649,8 @@ body {
   flex-direction: column;
   gap: 8px;
   transition: box-shadow 0.2s, transform 0.2s;
-  height: 248px;          /* fixed card height */
-  width: 100%;            /* fill grid column */
-  overflow: hidden;       /* nothing bleeds outside the card */
+  width: 100%;
+  height: auto;             /* grow with content — no clipping */
   box-sizing: border-box;
 }
 .note-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
@@ -666,20 +665,20 @@ body {
 .tag-kb-demo { background: #e8f5e9; color: #388e3c; }
 .tag-ai-demo { background: #e3f2fd; color: #1565c0; }
 .note-card h3 { font-size: 0.95rem; font-weight: 700; color: var(--text); line-height: 1.35; flex-shrink: 0; }
-.note-card p { 
-  font-size: 0.82rem; 
-  color: var(--text-muted); 
+.note-card > p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
   line-height: 1.6;
-  flex: 1;                  /* fill remaining space between title and meta */
-  min-height: 0;            /* allow flex child to shrink below content size */
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  text-align: justify;
+  /* Show up to ~5 lines then scroll, so long notes don't make cards huge */
+  max-height: 7.5em;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-  text-align: justify;
-  padding-right: 2px;       /* tiny gap so scrollbar doesn't overlap text */
+  padding-right: 2px;
 }
 .note-meta { font-size: 0.72rem; color: var(--text-light); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 .note-card-footer { display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding-top: 6px; border-top: 1px solid var(--border); flex-shrink: 0; }
@@ -701,11 +700,12 @@ body {
 /* ── Card-level AI Suggestion Panel ──────────────────────── */
 .card-ai-panel {
   background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%);
-  border-left: 3px solid var(--green);
+  border: 1px solid #c3e6cb;
   border-radius: var(--radius-sm);
-  padding: 9px 11px;
-  margin-top: 8px;
+  padding: 10px 12px;
+  margin-top: 4px;          /* clear gap below note content */
   animation: slideDown 0.3s ease;
+  flex-shrink: 0;
 }
 .card-ai-header {
   display: flex;
