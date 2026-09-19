@@ -769,12 +769,12 @@ function buildNoteCard(note) {
     aiHeader.appendChild(aiTitle);
     aiPanel.appendChild(aiHeader);
 
-    // Container for summary + tags (filled now or after fetch)
+    // Container for summary (filled now or after fetch)
     const aiBody = document.createElement("div");
     aiBody.className = "card-ai-body";
     aiPanel.appendChild(aiBody);
 
-    // ── Helper: render tags + summary into aiBody ─────────────
+    // ── Helper: render summary only into aiBody ───────────────
     function renderAIBody(suggestion) {
       aiBody.innerHTML = "";
 
@@ -783,59 +783,6 @@ function buildNoteCard(note) {
         summaryEl.className = "card-ai-summary";
         summaryEl.textContent = suggestion.summary;
         aiBody.appendChild(summaryEl);
-      }
-
-      if (suggestion.tags && suggestion.tags.length) {
-        const tagsRow = document.createElement("div");
-        tagsRow.className = "card-ai-tags-row";
-
-        suggestion.tags.forEach(sugTag => {
-          const lower = sugTag.toLowerCase().trim();
-
-          const chip = document.createElement("span");
-          chip.className = "card-ai-tag-chip";
-          chip.textContent = lower;
-
-          const applyBtn = document.createElement("button");
-          applyBtn.className = "btn-card-apply-tag";
-          applyBtn.textContent = "Apply";
-          applyBtn.title = `Set tag to "${lower}"`;
-          applyBtn.addEventListener("click", async () => {
-            applyBtn.disabled = true;
-            applyBtn.textContent = "…";
-            try {
-              const updated = await updateNote(note.id, {
-                title: note.title,
-                content: note.content,
-                tag: lower,
-              });
-              note.tag = updated.tag;
-              tagBadge.textContent = (updated.tag || "untagged").toUpperCase();
-              tagBadge.className = `note-tag ${tagClass(updated.tag)}`;
-              applyBtn.textContent = "✓ Applied";
-              applyBtn.style.background = "var(--green)";
-              applyBtn.style.color = "#fff";
-              setTimeout(() => {
-                applyBtn.textContent = "Apply";
-                applyBtn.disabled = false;
-                applyBtn.style.background = "";
-                applyBtn.style.color = "";
-              }, 2000);
-            } catch (err) {
-              applyBtn.textContent = "✗ Error";
-              applyBtn.disabled = false;
-              setTimeout(() => { applyBtn.textContent = "Apply"; }, 2000);
-            }
-          });
-
-          const wrapper = document.createElement("span");
-          wrapper.className = "card-ai-tag-wrapper";
-          wrapper.appendChild(chip);
-          wrapper.appendChild(applyBtn);
-          tagsRow.appendChild(wrapper);
-        });
-
-        aiBody.appendChild(tagsRow);
       }
     }
 
