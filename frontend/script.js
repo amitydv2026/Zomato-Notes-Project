@@ -747,7 +747,75 @@ function buildNoteCard(note) {
   `;
   card.appendChild(meta);
 
-  // AI panel removed — AI suggestions only available in Add Note form
+  // ── AI Suggestion panel (card-level) ─────────────────────────
+  if (note.ai_suggestion && (note.ai_suggestion.tags?.length || note.ai_suggestion.summary)) {
+    const aiPanel = document.createElement("div");
+    aiPanel.className = "card-ai-panel";
+
+    const aiHeader = document.createElement("div");
+    aiHeader.className = "card-ai-header";
+    aiHeader.innerHTML = `<span class="card-ai-icon">✨</span><span class="card-ai-title">AI Suggestion</span>`;
+
+    aiPanel.appendChild(aiHeader);
+
+    // Summary line
+    if (note.ai_suggestion.summary) {
+      const summaryEl = document.createElement("p");
+      summaryEl.className = "card-ai-summary";
+      summaryEl.textContent = note.ai_suggestion.summary;
+      aiPanel.appendChild(summaryEl);
+    }
+
+    // Tags + Apply buttons
+    if (note.ai_suggestion.tags && note.ai_suggestion.tags.length) {
+      const tagsRow = document.createElement("div");
+      tagsRow.className = "card-ai-tags-row";
+
+      note.ai_suggestion.tags.forEach(sugTag => {
+        const lower = sugTag.toLowerCase().trim();
+        const chip = document.createElement("span");
+        chip.className = "card-ai-tag-chip";
+        chip.textContent = lower;
+
+        const applyBtn = document.createElement("button");
+        applyBtn.className = "btn-card-apply-tag";
+        applyBtn.textContent = "Apply";
+        applyBtn.title = `Set tag to "${lower}"`;
+        applyBtn.addEventListener("click", async () => {
+          applyBtn.disabled = true;
+          applyBtn.textContent = "…";
+          try {
+            const updated = await updateNote(note.id, {
+              title: note.title,
+              content: note.content,
+              tag: lower,
+            });
+            note.tag = updated.tag;
+            tagBadge.textContent = (updated.tag || "untagged").toUpperCase();
+            tagBadge.className = `note-tag ${tagClass(updated.tag)}`;
+            applyBtn.textContent = "✓ Applied";
+            applyBtn.style.background = "var(--green)";
+            applyBtn.style.color = "#fff";
+            setTimeout(() => { applyBtn.textContent = "Apply"; applyBtn.disabled = false; applyBtn.style.background = ""; applyBtn.style.color = ""; }, 2000);
+          } catch (err) {
+            applyBtn.textContent = "✗ Err";
+            applyBtn.disabled = false;
+            setTimeout(() => { applyBtn.textContent = "Apply"; }, 2000);
+          }
+        });
+
+        const wrapper = document.createElement("span");
+        wrapper.className = "card-ai-tag-wrapper";
+        wrapper.appendChild(chip);
+        wrapper.appendChild(applyBtn);
+        tagsRow.appendChild(wrapper);
+      });
+
+      aiPanel.appendChild(tagsRow);
+    }
+
+    card.appendChild(aiPanel);
+  }
 
   // Footer
   const footer = document.createElement("div");

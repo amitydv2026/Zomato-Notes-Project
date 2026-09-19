@@ -58,26 +58,15 @@ app = FastAPI(
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# Base origins always allowed (local dev)
-_BASE_ORIGINS = [
-    "http://127.0.0.1:5500",
-    "http://localhost:5500",
-    "http://127.0.0.1:5501",
-    "http://localhost:5501",
-    "http://127.0.0.1:3000",
-    "http://localhost:3000",
-    "http://127.0.0.1:8080",
-    "http://localhost:8080",
-    "http://127.0.0.1:8001",
-    "http://localhost:8001",
-]
+# Single documented production frontend origin.
+# For local development, set ALLOWED_ORIGINS in your .env file, e.g.:
+#   ALLOWED_ORIGINS=http://127.0.0.1:5500,http://localhost:5500
+FRONTEND_ORIGIN = "https://amitydv2026.github.io"
 
-# ALLOWED_ORIGINS env var lets you add production origins (comma-separated)
-# e.g. ALLOWED_ORIGINS=https://yourusername.github.io,https://yourcustomdomain.com
 _extra = os.getenv("ALLOWED_ORIGINS", "")
 _extra_origins = [o.strip().rstrip("/") for o in _extra.split(",") if o.strip()]
 
-ALLOWED_ORIGINS = _BASE_ORIGINS + _extra_origins
+ALLOWED_ORIGINS = [FRONTEND_ORIGIN] + _extra_origins
 
 app.add_middleware(
     CORSMiddleware,

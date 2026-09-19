@@ -698,6 +698,73 @@ body {
 .apply-tag-btn { margin-top: 5px; padding: 3px 9px; font-size: 0.72rem; font-weight: 700; background: var(--green); color: #fff; border: none; border-radius: 5px; cursor: pointer; }
 .apply-tag-btn:hover { background: #1f7a54; }
 .apply-tag-btn:disabled { opacity: 0.5; cursor: default; }
+/* ── Card-level AI Suggestion Panel ──────────────────────── */
+.card-ai-panel {
+  background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%);
+  border-left: 3px solid var(--green);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  margin-top: 8px;
+  animation: slideDown 0.3s ease;
+}
+.card-ai-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 6px;
+}
+.card-ai-icon { font-size: 0.95rem; }
+.card-ai-title { flex: 1; }
+.card-ai-summary {
+  font-size: 0.76rem;
+  color: #2d6a4f;
+  font-style: italic;
+  line-height: 1.5;
+  margin-bottom: 7px;
+}
+.card-ai-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.card-ai-tag-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.card-ai-tag-chip {
+  background: #fff;
+  border: 1px solid #a8dfc9;
+  color: var(--green);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+.btn-card-apply-tag {
+  padding: 2px 7px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: var(--green);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn-card-apply-tag:hover:not(:disabled) {
+  background: #1f7a54;
+  transform: translateY(-1px);
+}
+.btn-card-apply-tag:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+}
+/* ─────────────────────────────────────────────────────────── */
 .edit-form { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: var(--blue-light); border: 1.5px solid var(--blue); border-radius: 7px; margin-bottom: 6px; }
 .edit-input, .edit-textarea { width: 100%; padding: 7px 9px; border: 1px solid #c0cfff; border-radius: 5px; font-size: 0.84rem; font-family: var(--font); color: var(--text); background: #fff; outline: none; }
 .edit-textarea { min-height: 58px; resize: vertical; }
