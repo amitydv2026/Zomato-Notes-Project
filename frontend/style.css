@@ -764,6 +764,37 @@ body {
   cursor: default;
   transform: none;
 }
+.card-ai-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.btn-card-get-ai {
+  align-self: flex-start;
+  padding: 4px 11px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--green) 0%, #1f7a54 100%);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  box-shadow: 0 1px 5px rgba(45,155,111,0.25);
+}
+.btn-card-get-ai:hover:not(:disabled) {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+.btn-card-get-ai:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+.card-ai-error {
+  font-size: 0.72rem;
+  color: var(--red);
+}
 /* ─────────────────────────────────────────────────────────── */
 .edit-form { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: var(--blue-light); border: 1.5px solid var(--blue); border-radius: 7px; margin-bottom: 6px; }
 .edit-input, .edit-textarea { width: 100%; padding: 7px 9px; border: 1px solid #c0cfff; border-radius: 5px; font-size: 0.84rem; font-family: var(--font); color: var(--text); background: #fff; outline: none; }

@@ -748,74 +748,157 @@ function buildNoteCard(note) {
   card.appendChild(meta);
 
   // ── AI Suggestion panel (card-level) ─────────────────────────
-  if (note.ai_suggestion && (note.ai_suggestion.tags?.length || note.ai_suggestion.summary)) {
+  // Always rendered on every card. Shows cached ai_suggestion if present,
+  // otherwise shows a "Get AI Summary" button that fetches on demand.
+  (function buildCardAIPanel(aiData) {
     const aiPanel = document.createElement("div");
     aiPanel.className = "card-ai-panel";
 
     const aiHeader = document.createElement("div");
     aiHeader.className = "card-ai-header";
-    aiHeader.innerHTML = `<span class="card-ai-icon">✨</span><span class="card-ai-title">AI Suggestion</span>`;
 
+    const aiIcon  = document.createElement("span");
+    aiIcon.className = "card-ai-icon";
+    aiIcon.textContent = "✨";
+
+    const aiTitle = document.createElement("span");
+    aiTitle.className = "card-ai-title";
+    aiTitle.textContent = "AI Summary";
+
+    aiHeader.appendChild(aiIcon);
+    aiHeader.appendChild(aiTitle);
     aiPanel.appendChild(aiHeader);
 
-    // Summary line
-    if (note.ai_suggestion.summary) {
-      const summaryEl = document.createElement("p");
-      summaryEl.className = "card-ai-summary";
-      summaryEl.textContent = note.ai_suggestion.summary;
-      aiPanel.appendChild(summaryEl);
-    }
+    // Container for summary + tags (filled now or after fetch)
+    const aiBody = document.createElement("div");
+    aiBody.className = "card-ai-body";
+    aiPanel.appendChild(aiBody);
 
-    // Tags + Apply buttons
-    if (note.ai_suggestion.tags && note.ai_suggestion.tags.length) {
-      const tagsRow = document.createElement("div");
-      tagsRow.className = "card-ai-tags-row";
+    // ── Helper: render tags + summary into aiBody ─────────────
+    function renderAIBody(suggestion) {
+      aiBody.innerHTML = "";
 
-      note.ai_suggestion.tags.forEach(sugTag => {
-        const lower = sugTag.toLowerCase().trim();
-        const chip = document.createElement("span");
-        chip.className = "card-ai-tag-chip";
-        chip.textContent = lower;
+      if (suggestion.summary) {
+        const summaryEl = document.createElement("p");
+        summaryEl.className = "card-ai-summary";
+        summaryEl.textContent = suggestion.summary;
+        aiBody.appendChild(summaryEl);
+      }
 
-        const applyBtn = document.createElement("button");
-        applyBtn.className = "btn-card-apply-tag";
-        applyBtn.textContent = "Apply";
-        applyBtn.title = `Set tag to "${lower}"`;
-        applyBtn.addEventListener("click", async () => {
-          applyBtn.disabled = true;
-          applyBtn.textContent = "…";
-          try {
-            const updated = await updateNote(note.id, {
-              title: note.title,
-              content: note.content,
-              tag: lower,
-            });
-            note.tag = updated.tag;
-            tagBadge.textContent = (updated.tag || "untagged").toUpperCase();
-            tagBadge.className = `note-tag ${tagClass(updated.tag)}`;
-            applyBtn.textContent = "✓ Applied";
-            applyBtn.style.background = "var(--green)";
-            applyBtn.style.color = "#fff";
-            setTimeout(() => { applyBtn.textContent = "Apply"; applyBtn.disabled = false; applyBtn.style.background = ""; applyBtn.style.color = ""; }, 2000);
-          } catch (err) {
-            applyBtn.textContent = "✗ Err";
-            applyBtn.disabled = false;
-            setTimeout(() => { applyBtn.textContent = "Apply"; }, 2000);
-          }
+      if (suggestion.tags && suggestion.tags.length) {
+        const tagsRow = document.createElement("div");
+        tagsRow.className = "card-ai-tags-row";
+
+        suggestion.tags.forEach(sugTag => {
+          const lower = sugTag.toLowerCase().trim();
+
+          const chip = document.createElement("span");
+          chip.className = "card-ai-tag-chip";
+          chip.textContent = lower;
+
+          const applyBtn = document.createElement("button");
+          applyBtn.className = "btn-card-apply-tag";
+          applyBtn.textContent = "Apply";
+          applyBtn.title = `Set tag to "${lower}"`;
+          applyBtn.addEventListener("click", async () => {
+            applyBtn.disabled = true;
+            applyBtn.textContent = "…";
+            try {
+              const updated = await updateNote(note.id, {
+                title: note.title,
+                content: note.content,
+                tag: lower,
+              });
+              note.tag = updated.tag;
+              tagBadge.textContent = (updated.tag || "untagged").toUpperCase();
+              tagBadge.className = `note-tag ${tagClass(updated.tag)}`;
+              applyBtn.textContent = "✓ Applied";
+              applyBtn.style.background = "var(--green)";
+              applyBtn.style.color = "#fff";
+              setTimeout(() => {
+                applyBtn.textContent = "Apply";
+                applyBtn.disabled = false;
+                applyBtn.style.background = "";
+                applyBtn.style.color = "";
+              }, 2000);
+            } catch (err) {
+              applyBtn.textContent = "✗ Error";
+              applyBtn.disabled = false;
+              setTimeout(() => { applyBtn.textContent = "Apply"; }, 2000);
+            }
+          });
+
+          const wrapper = document.createElement("span");
+          wrapper.className = "card-ai-tag-wrapper";
+          wrapper.appendChild(chip);
+          wrapper.appendChild(applyBtn);
+          tagsRow.appendChild(wrapper);
         });
 
-        const wrapper = document.createElement("span");
-        wrapper.className = "card-ai-tag-wrapper";
-        wrapper.appendChild(chip);
-        wrapper.appendChild(applyBtn);
-        tagsRow.appendChild(wrapper);
+        aiBody.appendChild(tagsRow);
+      }
+    }
+
+    // ── If ai_suggestion already available (just created) ─────
+    if (aiData && (aiData.tags?.length || aiData.summary)) {
+      renderAIBody(aiData);
+    } else {
+      // Show fetch button for existing notes loaded via GET /notes
+      const fetchBtn = document.createElement("button");
+      fetchBtn.className = "btn-card-get-ai";
+      fetchBtn.textContent = "✨ Get AI Summary";
+      fetchBtn.title = "Analyse this note with AI to get tags and a summary";
+
+      fetchBtn.addEventListener("click", async () => {
+        fetchBtn.disabled = true;
+        fetchBtn.textContent = "⏳ Analysing…";
+
+        try {
+          const res = await fetch(`${API_BASE}/ai/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: `Title: "${note.title}"\n\n${note.content}`,
+              history: [{
+                role: "system",
+                content: `You are a note-tagging assistant. Read the note and return ONLY valid JSON with two keys:
+- "tags": list of 1–3 short lowercase keyword strings
+- "summary": exactly one sentence, max 20 words
+Example: {"tags":["work","incident"],"summary":"Describes a database outage and its resolution steps."}`
+              }]
+            }),
+          });
+
+          if (!res.ok) throw new Error(`AI request failed: ${res.status}`);
+
+          const data = await res.json();
+          const raw  = data.reply || "";
+          const match = (typeof raw === "string" ? raw : JSON.stringify(raw)).match(/\{[\s\S]*?\}/);
+          if (!match) throw new Error("No JSON in AI response");
+
+          const parsed = JSON.parse(match[0]);
+          if (!parsed.tags && !parsed.summary) throw new Error("Missing tags/summary");
+
+          // Replace the button with the rendered result
+          fetchBtn.remove();
+          renderAIBody(parsed);
+
+        } catch (err) {
+          fetchBtn.disabled = false;
+          fetchBtn.textContent = "✨ Get AI Summary";
+          const errMsg = document.createElement("span");
+          errMsg.className = "card-ai-error";
+          errMsg.textContent = `⚠️ ${err.message}`;
+          aiBody.appendChild(errMsg);
+          setTimeout(() => errMsg.remove(), 3000);
+        }
       });
 
-      aiPanel.appendChild(tagsRow);
+      aiBody.appendChild(fetchBtn);
     }
 
     card.appendChild(aiPanel);
-  }
+  })(note.ai_suggestion || null);
 
   // Footer
   const footer = document.createElement("div");
