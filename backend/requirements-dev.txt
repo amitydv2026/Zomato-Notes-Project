@@ -1,0 +1,5 @@
+# Test-only dependencies (not installed in production).
+# Install with:  pip install -r requirements-dev.txt
+pytest
+httpx              # required by FastAPI's TestClient
+pytest-cov         # optional coverage reports

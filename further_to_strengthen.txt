@@ -1,0 +1,28 @@
+IITP-SDAIENG-2602 — Capstone Project
+Opportunities to Further Strengthen
+========================================
+
+Part 1 — Core App: Backend + Web Dashboard
+-------------------------------------------
+
+1. The AI suggestion panel and Apply as tag button are present in the Add Note form panel
+   but are not rendered at the individual note card level. The `buildNoteCard` function
+   could have been extended to include an `ai_suggestion` panel (displaying `tags` and
+   `summary`) along with an Apply as tag button directly on each newly created card,
+   which is where the rubric criterion applies.
+
+2. The `CORSMiddleware` configuration could have been made more precise by restricting
+   allowed origins to a single documented frontend origin rather than a broad list of ten,
+   bringing it in line with the rubric's specification.
+
+
+Part 3 — Integrated Intelligence Layer: LLM Auto-Tagging & Local Semantic Search
+----------------------------------------------------------------------------------
+
+1. As in Part 1, the `buildNoteCard` function could have been extended to wire the
+   `ai_suggestion` field returned by `POST /notes` directly into the rendered note card,
+   adding a visible tags and summary panel alongside an Apply as tag button that calls
+   `PUT /notes/{id}`.
+
+2. This card-level rendering is where the rubric's AI panel requirement applies, and
+   addressing it could have supported the remaining marks available in this section.
