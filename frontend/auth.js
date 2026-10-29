@@ -88,11 +88,17 @@ loginForm.addEventListener("submit", async (e) => {
   btn.disabled = true;
   btn.textContent = "Signing in…";
   try {
+    // 15-second timeout — Render free tier can be slow on cold start
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(() => controller.abort(), 15000);
+
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -119,9 +125,19 @@ loginForm.addEventListener("submit", async (e) => {
     window.location.replace("index.html");
 
   } catch (err) {
-    // Network failure (CORS, backend unreachable, DNS error)
-    errorEl.textContent = "Could not connect to server. Check your connection or try again in a moment.";
-    console.error("Login fetch error:", err);
+    // Network failure — show the actual JS error type to help diagnose
+    const isAbort   = err.name === "AbortError";
+    const isCORS    = err.message && err.message.toLowerCase().includes("cors");
+    const isTimeout = err.name === "TimeoutError";
+
+    if (isAbort || isTimeout) {
+      errorEl.textContent = "Request timed out — the server is waking up (Render free tier). Wait 30 seconds and try again.";
+    } else if (isCORS) {
+      errorEl.textContent = "CORS error — the server rejected the request origin. Contact the admin.";
+    } else {
+      errorEl.textContent = `Connection error: ${err.message || err.name}. Check your internet and try again.`;
+    }
+    console.error("Login fetch error:", err.name, err.message, err);
   } finally {
     btn.disabled = false;
     btn.textContent = "Sign In";

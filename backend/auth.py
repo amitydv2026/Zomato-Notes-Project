@@ -27,7 +27,7 @@ JWT_ALGORITHM  = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24 h
 
 # ── Password hashing ──────────────────────────────────────────────────────────
-_BCRYPT_ROUNDS = 12
+_BCRYPT_ROUNDS = 10   # cost 10 (~75ms) — secure industry default, avoids timeout on Render free tier
 
 
 def hash_password(plain: str) -> str:
