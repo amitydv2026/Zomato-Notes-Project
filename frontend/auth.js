@@ -96,7 +96,14 @@ loginForm.addEventListener("submit", async (e) => {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      errorEl.textContent = data.detail || "Invalid email or password.";
+      // 401 with a legacy plaintext-password account → guide the user to re-register
+      if (res.status === 401) {
+        errorEl.textContent = data.detail === "Invalid email or password"
+          ? "Invalid email or password. If your account was created before our recent upgrade, please sign up again with a new account."
+          : (data.detail || "Invalid email or password.");
+      } else {
+        errorEl.textContent = data.detail || `Server error (${res.status}). Please try again.`;
+      }
       return;
     }
 
@@ -112,7 +119,9 @@ loginForm.addEventListener("submit", async (e) => {
     window.location.replace("index.html");
 
   } catch (err) {
-    errorEl.textContent = "Could not connect to server. Is the backend running?";
+    // Network failure (CORS, backend unreachable, DNS error)
+    errorEl.textContent = "Could not connect to server. Check your connection or try again in a moment.";
+    console.error("Login fetch error:", err);
   } finally {
     btn.disabled = false;
     btn.textContent = "Sign In";
