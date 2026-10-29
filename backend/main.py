@@ -22,7 +22,6 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 from sqlalchemy.orm import Session
@@ -84,16 +83,20 @@ app.add_middleware(
 
 
 # ── X-Process-Time middleware ─────────────────────────────────────────────────
-class ProcessTimeMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next) -> Response:
-        start = time.perf_counter()
-        response = await call_next(request)
-        elapsed = time.perf_counter() - start
-        response.headers["X-Process-Time"] = f"{elapsed:.6f}s"
-        return response
-
-
-app.add_middleware(ProcessTimeMiddleware)
+# NOTE: We use @app.middleware("http") instead of BaseHTTPMiddleware because
+# BaseHTTPMiddleware has a known Starlette bug where unhandled exceptions inside
+# route handlers produce a 500 response that bypasses CORSMiddleware — the browser
+# then sees a 500 with no Access-Control-Allow-Origin header and reports it as a
+# CORS error even though the CORS config is correct.
+# The @app.middleware decorator properly re-raises exceptions so they propagate
+# through the full middleware stack including CORSMiddleware.
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next) -> Response:
+    start = time.perf_counter()
+    response = await call_next(request)
+    elapsed = time.perf_counter() - start
+    response.headers["X-Process-Time"] = f"{elapsed:.6f}s"
+    return response
 
 
 # ── Auth dependency (legacy shared-secret — kept for reference, replaced by JWT) ─
