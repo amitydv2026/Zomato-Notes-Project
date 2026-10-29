@@ -3,6 +3,7 @@ from sqlalchemy import text
 from typing import Optional, List
 import models
 import schemas
+from auth import hash_password
 
 
 # ── Users ─────────────────────────────────────────────────────────────────────
@@ -11,7 +12,7 @@ def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     db_user = models.User(
         name=user.name,
         email=user.email,
-        password=user.password,
+        password=hash_password(user.password),   # store bcrypt hash, never plaintext
     )
     db.add(db_user)
     db.commit()
@@ -21,6 +22,10 @@ def create_user(db: Session, user: schemas.UserCreate) -> models.User:
 
 def get_user(db: Session, user_id: int) -> Optional[models.User]:
     return db.query(models.User).filter(models.User.id == user_id).first()
+
+
+def get_user_by_email(db: Session, email: str) -> Optional[models.User]:
+    return db.query(models.User).filter(models.User.email == email).first()
 
 
 # ── Notes ─────────────────────────────────────────────────────────────────────

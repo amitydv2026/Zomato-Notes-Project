@@ -1,7 +1,8 @@
 // ── Auth check ────────────────────────────────────────────────
 const userId   = localStorage.getItem("zn_user_id");
 const userName = localStorage.getItem("zn_user_name");
-if (!userId || !userName) window.location.replace("auth.html");
+const znToken  = localStorage.getItem("zn_token");
+if (!userId || !userName || !znToken) window.location.replace("auth.html");
 
 // Set user info in UI — all from localStorage, nothing hardcoded
 document.getElementById("topbar-greeting").textContent  = userName;
@@ -636,10 +637,12 @@ async function fetchNotes(tag = "") {
   return res.json();
 }
 async function createNote(data) {
+  // owner_id is now derived server-side from the JWT — do not send it in the body
+  const { owner_id, ...notePayload } = data;
   const res = await fetch(`${API_BASE}/notes`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    headers: authHeaders(),
+    body: JSON.stringify(notePayload),
   });
   if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.detail || `POST /notes failed: ${res.status}`); }
   return res.json();
@@ -647,7 +650,7 @@ async function createNote(data) {
 async function deleteNote(id) {
   const res = await fetch(`${API_BASE}/notes/${id}`, {
     method: "DELETE",
-    headers: { "x-token": SECRET_TOKEN, "x-user-id": localStorage.getItem("zn_user_id") },
+    headers: authHeaders(),
   });
   if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.detail || `DELETE failed: ${res.status}`); }
   return res.json();
@@ -655,7 +658,7 @@ async function deleteNote(id) {
 async function updateNote(id, data) {
   const res = await fetch(`${API_BASE}/notes/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json", "x-user-id": localStorage.getItem("zn_user_id") },
+    headers: authHeaders(),
     body: JSON.stringify(data),
   });
   if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.detail || `PUT failed: ${res.status}`); }

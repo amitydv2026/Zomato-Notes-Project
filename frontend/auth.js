@@ -101,11 +101,12 @@ loginForm.addEventListener("submit", async (e) => {
     }
 
     const user = await res.json();
-    // Save session to localStorage
+    // Save session to localStorage — store the JWT token for API calls
     localStorage.setItem("zn_user_id",   user.id);
     localStorage.setItem("zn_user_name", user.name);
     localStorage.setItem("zn_user_email", user.email);
     localStorage.setItem("zn_last_email", user.email);
+    localStorage.setItem("zn_token",     user.access_token);  // JWT Bearer token
 
     // Redirect to main app
     window.location.replace("index.html");

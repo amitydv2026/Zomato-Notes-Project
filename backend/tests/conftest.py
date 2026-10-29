@@ -11,11 +11,16 @@ Two important things happen here:
 
 import os
 
-# ── Set env BEFORE importing anything that reads database.py / main.py ───────
-os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
-os.environ.setdefault("SECRET_TOKEN", "test-secret")
-os.environ.setdefault("MOCK_AI", "1")          # avoid real Groq calls in tests
-os.environ.setdefault("AI_API_KEY", "test-key")
+# ── Force env BEFORE importing anything that reads database.py / main.py ─────
+#    Using assignment (not setdefault) so tests stay hermetic: an ambient
+#    SECRET_TOKEN or DATABASE_URL from the shell/CI cannot leak in.
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["SECRET_TOKEN"] = "test-secret"
+os.environ["MOCK_AI"] = "1"            # avoid real Groq calls in tests
+os.environ["AI_API_KEY"] = "test-key"
+os.environ["JWT_SECRET_KEY"] = "test-jwt-secret"
+os.environ["JWT_ALGORITHM"] = "HS256"
+os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "60"
 
 import pytest
 from fastapi.testclient import TestClient
@@ -71,3 +76,42 @@ def reset_db():
 def client():
     """FastAPI test client wired to the in-memory test database."""
     return TestClient(main.app)
+
+
+# ── JWT helper fixture ────────────────────────────────────────────────────────
+
+TEST_PASSWORD = "testpass123"
+
+
+def _register_and_login(client, email="fixture@test.com", name="Fixture User"):
+    """Register a user and return (user_dict, jwt_token)."""
+    res = client.post("/users", json={"name": name, "email": email, "password": TEST_PASSWORD})
+    assert res.status_code == 201, f"User creation failed: {res.json()}"
+    user = res.json()
+
+    login = client.post("/auth/login", json={"email": email, "password": TEST_PASSWORD})
+    assert login.status_code == 200, f"Login failed: {login.json()}"
+    token = login.json()["access_token"]
+    return user, token
+
+
+@pytest.fixture()
+def auth_client(client):
+    """
+    Returns a helper object with:
+      .client  — the TestClient
+      .user    — the registered user dict
+      .token   — the JWT access token string
+      .headers — {"Authorization": "Bearer <token>"} ready for use
+    """
+    user, token = _register_and_login(client)
+
+    class _Auth:
+        pass
+
+    a = _Auth()
+    a.client  = client
+    a.user    = user
+    a.token   = token
+    a.headers = {"Authorization": f"Bearer {token}"}
+    return a

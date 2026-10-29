@@ -1,6 +1,9 @@
 """
 Integration tests for main.py API endpoints.
 Uses FastAPI's TestClient with the in-memory SQLite DB override from conftest.
+
+All write/mutate operations now use JWT Bearer authentication.
+The `auth_client` fixture (from conftest) provides a pre-authenticated client.
 """
 
 # NOTE: `password` must be >= 8 chars (UserCreate min_length=8).
@@ -33,7 +36,12 @@ def test_create_user_then_login(client):
         "password": TEST_PASSWORD,
     })
     assert login.status_code == 200
-    assert login.json()["id"] == user_id
+    body = login.json()
+    assert body["id"] == user_id
+    # JWT fields must be present
+    assert "access_token" in body
+    assert body["token_type"] == "bearer"
+    assert len(body["access_token"]) > 20   # sanity: not empty
 
 
 def test_create_user_rejects_duplicate_email(client):
@@ -69,36 +77,30 @@ def test_login_unknown_email(client):
 
 # ── Notes ─────────────────────────────────────────────────────────────────────
 
-def _make_user(client, email="user@test.com"):
-    res = client.post("/users", json={
-        "name": "Tester", "email": email, "password": TEST_PASSWORD
-    })
-    return res.json()
-
-
-def test_create_note_requires_valid_owner(client):
+def test_create_note_requires_jwt(client):
+    """POST /notes without a token must return 401."""
     res = client.post("/notes", json={
         "title": "Orphan note",
-        "content": "no owner",
+        "content": "no token supplied",
         "tag": "work",
-        "owner_id": 999,
     })
-    assert res.status_code == 404
+    assert res.status_code == 401
 
 
-def test_create_and_get_note(client):
-    user = _make_user(client, email="note@test.com")
-    create = client.post("/notes", json={
+def test_create_and_get_note(auth_client):
+    """Authenticated user can create a note; owner_id is derived from the JWT."""
+    create = auth_client.client.post("/notes", json={
         "title": "Postgres outage runbook",
         "content": "Restart the postgres instance and check connection pool.",
         "tag": "work",
-        "owner_id": user["id"],
-    })
+    }, headers=auth_client.headers)
     assert create.status_code == 201
-    note_id = create.json()["id"]
-    assert create.json()["owner_name"] == "Tester"
+    note = create.json()
+    note_id = note["id"]
+    assert note["owner_id"] == auth_client.user["id"]
+    assert note["owner_name"] == auth_client.user["name"]
 
-    got = client.get(f"/notes/{note_id}")
+    got = auth_client.client.get(f"/notes/{note_id}")
     assert got.status_code == 200
     assert got.json()["title"] == "Postgres outage runbook"
 
@@ -107,14 +109,12 @@ def test_get_note_not_found(client):
     assert client.get("/notes/12345").status_code == 404
 
 
-def test_list_notes_filters_by_tag(client):
-    user = _make_user(client, email="list@test.com")
+def test_list_notes_filters_by_tag(auth_client):
     for tag, title in [("work", "Work note"), ("health", "Health note")]:
-        client.post("/notes", json={
+        auth_client.client.post("/notes", json={
             "title": title, "content": "body text", "tag": tag,
-            "owner_id": user["id"],
-        })
-    res = client.get("/notes", params={"tag": "health"})
+        }, headers=auth_client.headers)
+    res = auth_client.client.get("/notes", params={"tag": "health"})
     assert res.status_code == 200
     notes = res.json()
     assert len(notes) == 1
@@ -123,15 +123,13 @@ def test_list_notes_filters_by_tag(client):
 
 # ── Search (Part 2) ───────────────────────────────────────────────────────────
 
-def test_search_notes_by_keyword(client):
-    user = _make_user(client, email="search@test.com")
-    client.post("/notes", json={
+def test_search_notes_by_keyword(auth_client):
+    auth_client.client.post("/notes", json={
         "title": "Postgres outage runbook",
         "content": "restart the postgres instance",
         "tag": "work",
-        "owner_id": user["id"],
-    })
-    res = client.get("/notes/search", params={"keyword": "postgres"})
+    }, headers=auth_client.headers)
+    res = auth_client.client.get("/notes/search", params={"keyword": "postgres"})
     assert res.status_code == 200
     assert len(res.json()) >= 1
     assert res.json()[0]["score"] > 0
@@ -142,28 +140,25 @@ def test_search_notes_requires_params(client):
     assert res.status_code == 400
 
 
-def test_search_notes_sort_by_date(client):
-    user = _make_user(client, email="sort@test.com")
-    client.post("/notes", json={
-        "title": "First", "content": "a", "tag": "work", "owner_id": user["id"],
-    })
-    client.post("/notes", json={
-        "title": "Second", "content": "b", "tag": "work", "owner_id": user["id"],
-    })
-    res = client.get("/notes/search", params={"sort_by": "date"})
+def test_search_notes_sort_by_date(auth_client):
+    auth_client.client.post("/notes", json={
+        "title": "First", "content": "a", "tag": "work",
+    }, headers=auth_client.headers)
+    auth_client.client.post("/notes", json={
+        "title": "Second", "content": "b", "tag": "work",
+    }, headers=auth_client.headers)
+    res = auth_client.client.get("/notes/search", params={"sort_by": "date"})
     assert res.status_code == 200
     assert len(res.json()) == 2
 
 
-def test_lookup_note_by_title(client):
-    user = _make_user(client, email="lookup@test.com")
-    client.post("/notes", json={
+def test_lookup_note_by_title(auth_client):
+    auth_client.client.post("/notes", json={
         "title": "Alpha runbook",
         "content": "content here",
         "tag": "work",
-        "owner_id": user["id"],
-    })
-    res = client.get("/notes/lookup", params={"title": "Alpha runbook", "algo": "iterative"})
+    }, headers=auth_client.headers)
+    res = auth_client.client.get("/notes/lookup", params={"title": "Alpha runbook", "algo": "iterative"})
     assert res.status_code == 200
     assert res.json()["title"] == "Alpha runbook"
 
@@ -172,13 +167,11 @@ def test_lookup_note_not_found(client):
     assert client.get("/notes/lookup", params={"title": "Does Not Exist"}).status_code == 404
 
 
-def test_quick_find_by_tag(client):
-    user = _make_user(client, email="quickfind@test.com")
-    client.post("/notes", json={
+def test_quick_find_by_tag(auth_client):
+    auth_client.client.post("/notes", json={
         "title": "Tagged note", "content": "body", "tag": "travel",
-        "owner_id": user["id"],
-    })
-    res = client.get("/notes/quick-find", params={"tag": "travel"})
+    }, headers=auth_client.headers)
+    res = auth_client.client.get("/notes/quick-find", params={"tag": "travel"})
     assert res.status_code == 200
     assert res.json()["tag"] == "travel"
 
@@ -187,75 +180,101 @@ def test_quick_find_tag_not_found(client):
     assert client.get("/notes/quick-find", params={"tag": "nonexistent"}).status_code == 404
 
 
-# ── Update / Delete (permissions) ─────────────────────────────────────────────
+# ── Update / Delete (JWT ownership enforcement) ────────────────────────────────
 
-def test_update_note_owner_only(client):
-    user = _make_user(client, email="upd@test.com")
-    note = client.post("/notes", json={
+def _create_second_user_token(client, email="other@test.com"):
+    """Helper: register a second user and return their JWT token."""
+    client.post("/users", json={
+        "name": "Other", "email": email, "password": TEST_PASSWORD
+    })
+    login = client.post("/auth/login", json={"email": email, "password": TEST_PASSWORD})
+    return login.json()["access_token"]
+
+
+def test_update_note_requires_jwt(auth_client):
+    """PUT /notes/{id} without a token returns 401."""
+    note = auth_client.client.post("/notes", json={
         "title": "Original", "content": "content", "tag": "work",
-        "owner_id": user["id"],
-    }).json()
+    }, headers=auth_client.headers).json()
 
-    # No x-user-id header → 401
-    assert client.put(f"/notes/{note['id']}", json={"title": "Changed"}).status_code == 401
+    res = auth_client.client.put(f"/notes/{note['id']}", json={"title": "Changed"})
+    assert res.status_code == 401
 
-    # Wrong owner → 403
-    res = client.put(
+
+def test_update_note_wrong_owner(auth_client):
+    """PUT /notes/{id} with a different user's token returns 403."""
+    note = auth_client.client.post("/notes", json={
+        "title": "Original", "content": "content", "tag": "work",
+    }, headers=auth_client.headers).json()
+
+    other_token = _create_second_user_token(auth_client.client)
+    res = auth_client.client.put(
         f"/notes/{note['id']}", json={"title": "Changed"},
-        headers={"x-user-id": "999"},
+        headers={"Authorization": f"Bearer {other_token}"},
     )
     assert res.status_code == 403
 
-    # Correct owner → 200
-    res = client.put(
+
+def test_update_note_owner_succeeds(auth_client):
+    """PUT /notes/{id} with the owner's token succeeds."""
+    note = auth_client.client.post("/notes", json={
+        "title": "Original", "content": "content", "tag": "work",
+    }, headers=auth_client.headers).json()
+
+    res = auth_client.client.put(
         f"/notes/{note['id']}", json={"title": "Changed"},
-        headers={"x-user-id": str(user["id"])},
+        headers=auth_client.headers,
     )
     assert res.status_code == 200
     assert res.json()["title"] == "Changed"
 
 
-def test_delete_note_requires_token(client):
-    user = _make_user(client, email="del@test.com")
-    note = client.post("/notes", json={
+def test_delete_note_requires_jwt(auth_client):
+    """DELETE /notes/{id} without a token returns 401."""
+    note = auth_client.client.post("/notes", json={
         "title": "To delete", "content": "content", "tag": "work",
-        "owner_id": user["id"],
-    }).json()
+    }, headers=auth_client.headers).json()
 
-    # No x-token header → 401 (verify_token runs first)
-    res = client.delete(
-        f"/notes/{note['id']}", headers={"x-user-id": str(user["id"])}
-    )
+    res = auth_client.client.delete(f"/notes/{note['id']}")
     assert res.status_code == 401
 
 
-def test_delete_note_wrong_token(client):
-    user = _make_user(client, email="deltok@test.com")
-    note = client.post("/notes", json={
+def test_delete_note_wrong_owner(auth_client):
+    """DELETE /notes/{id} with a different user's token returns 403."""
+    note = auth_client.client.post("/notes", json={
         "title": "To delete", "content": "content", "tag": "work",
-        "owner_id": user["id"],
-    }).json()
+    }, headers=auth_client.headers).json()
 
-    res = client.delete(
+    other_token = _create_second_user_token(auth_client.client, email="delother@test.com")
+    res = auth_client.client.delete(
         f"/notes/{note['id']}",
-        headers={"x-user-id": str(user["id"]), "x-token": "wrong-token"},
+        headers={"Authorization": f"Bearer {other_token}"},
     )
     assert res.status_code == 403
 
 
-def test_delete_note_success(client):
-    user = _make_user(client, email="delok@test.com")
-    note = client.post("/notes", json={
+def test_delete_note_success(auth_client):
+    """DELETE /notes/{id} with the owner's token succeeds and note is gone."""
+    note = auth_client.client.post("/notes", json={
         "title": "To delete", "content": "content", "tag": "work",
-        "owner_id": user["id"],
-    }).json()
+    }, headers=auth_client.headers).json()
+
+    res = auth_client.client.delete(
+        f"/notes/{note['id']}",
+        headers=auth_client.headers,
+    )
+    assert res.status_code == 200
+    assert auth_client.client.get(f"/notes/{note['id']}").status_code == 404
+
+
+def test_invalid_token_is_rejected(client, auth_client):
+    """A tampered / invalid token returns 401."""
+    note = auth_client.client.post("/notes", json={
+        "title": "Secure note", "content": "content", "tag": "work",
+    }, headers=auth_client.headers).json()
 
     res = client.delete(
         f"/notes/{note['id']}",
-        headers={
-            "x-user-id": str(user["id"]),
-            "x-token": "test-secret",   # matches SECRET_TOKEN set in conftest
-        },
+        headers={"Authorization": "Bearer this.is.not.a.valid.token"},
     )
-    assert res.status_code == 200
-    assert client.get(f"/notes/{note['id']}").status_code == 404
+    assert res.status_code == 401

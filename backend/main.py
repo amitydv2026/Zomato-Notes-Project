@@ -30,6 +30,11 @@ from sqlalchemy.orm import Session
 import crud
 import models
 import schemas
+from auth import (
+    create_access_token,
+    get_current_user,
+    verify_password,
+)
 from database import Base, engine, get_db
 from algorithms import (
     binary_search_iterative,
@@ -91,11 +96,12 @@ class ProcessTimeMiddleware(BaseHTTPMiddleware):
 app.add_middleware(ProcessTimeMiddleware)
 
 
-# ── Auth dependency ───────────────────────────────────────────────────────────
+# ── Auth dependency (legacy shared-secret — kept for reference, replaced by JWT) ─
 SECRET_TOKEN = os.getenv("SECRET_TOKEN", "zomato-secret")
 
 
 def verify_token(x_token: Optional[str] = Header(default=None)):
+    """Deprecated — used only in legacy DELETE flow, now replaced by JWT."""
     if x_token is None:
         raise HTTPException(status_code=401, detail="Missing x-token header")
     if x_token != SECRET_TOKEN:
@@ -119,7 +125,7 @@ def ping():
 
 @app.post("/users", response_model=schemas.UserResponse, status_code=201, tags=["Users"])
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    """Create a new user. Email must be unique."""
+    """Create a new user. Password is hashed with bcrypt before storage. Email must be unique."""
     existing = db.query(models.User).filter(models.User.email == user.email).first()
     if existing:
         raise HTTPException(status_code=409, detail="Email already registered")
@@ -128,11 +134,23 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/auth/login", response_model=schemas.LoginResponse, tags=["Auth"])
 def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
-    """Login with email + password. Returns user id, name, email on success."""
-    user = db.query(models.User).filter(models.User.email == credentials.email).first()
-    if not user or user.password != credentials.password:
+    """
+    Login with email + password.
+    Returns the user's profile AND a signed JWT access token.
+    Include the token as  ``Authorization: Bearer <token>``  on protected routes.
+    """
+    user = crud.get_user_by_email(db, credentials.email)
+    if not user or not verify_password(credentials.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    return schemas.LoginResponse(id=user.id, name=user.name, email=user.email)
+
+    token = create_access_token({"sub": user.email})
+    return schemas.LoginResponse(
+        id=user.id,
+        name=user.name,
+        email=user.email,
+        access_token=token,
+        token_type="bearer",
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -143,15 +161,17 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
 async def create_note(
     note: schemas.NoteCreate,
     background_tasks: BackgroundTasks,
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Create a note. Validates owner_id exists. Fires background indexing task.
-    Returns an ai_suggestion field from get_ai_response() (MOCK_AI=1 by default).
+    Create a note. Requires a valid JWT (``Authorization: Bearer <token>``).
+    ``owner_id`` is derived from the authenticated user — callers must not supply it.
+    Fires a background indexing task.
+    Returns an ai_suggestion field from get_ai_response().
     """
-    owner = crud.get_user(db, note.owner_id)
-    if not owner:
-        raise HTTPException(status_code=404, detail=f"User {note.owner_id} not found")
+    # Always use the authenticated user as owner — ignore any client-supplied owner_id
+    note.owner_id = current_user.id
 
     db_note = crud.create_note(db, note)
     background_tasks.add_task(_index_note_background, db_note.id)
@@ -167,7 +187,7 @@ async def create_note(
 
     response = schemas.NoteResponse.model_validate(db_note)
     response.ai_suggestion = ai_suggestion
-    response.owner_name = owner.name
+    response.owner_name = current_user.name
     return response
 
 
@@ -303,16 +323,14 @@ def get_note(note_id: int, db: Session = Depends(get_db)):
 def update_note(
     note_id: int,
     update: schemas.NoteUpdate,
-    x_user_id: Optional[int] = Header(default=None),
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Update a note. Only the note's owner can edit it (x-user-id header required)."""
+    """Update a note. Requires a valid JWT. Only the note's owner can edit it."""
     note = crud.get_note(db, note_id)
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
-    if x_user_id is None:
-        raise HTTPException(status_code=401, detail="Missing x-user-id header")
-    if note.owner_id != x_user_id:
+    if note.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only edit your own notes")
     updated = crud.update_note(db, note_id, update)
     return updated
@@ -321,17 +339,14 @@ def update_note(
 @app.delete("/notes/{note_id}", status_code=200, tags=["Notes"])
 def delete_note(
     note_id: int,
-    x_user_id: Optional[int] = Header(default=None),
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    _: None = Depends(verify_token),
 ):
-    """Delete a note. Requires x-token header. Only the note's owner can delete it."""
+    """Delete a note. Requires a valid JWT. Only the note's owner can delete it."""
     note = crud.get_note(db, note_id)
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
-    if x_user_id is None:
-        raise HTTPException(status_code=401, detail="Missing x-user-id header")
-    if note.owner_id != x_user_id:
+    if note.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only delete your own notes")
     crud.delete_note(db, note_id)
     return {"detail": "Note deleted successfully"}
@@ -378,20 +393,17 @@ def _extract_title_and_content(line: str) -> tuple[str, str]:
 @app.post("/notes/import", status_code=201, tags=["Notes"])
 async def import_notes(
     file: UploadFile = File(...),
-    owner_id: int = Query(...),
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Import notes from a .txt file. Supports three line formats:
+    Import notes from a .txt file. Requires a valid JWT.
+    Supports three line formats:
       1. Explicit:  Title: My Title | Content: Full content here
       2. Colon:     Short Label: longer description text
       3. Plain:     First 6 words become title, full line is content
-    Validates owner_id before processing any lines (404 if not found).
+    The authenticated user becomes the owner of all imported notes.
     """
-    owner = crud.get_user(db, owner_id)
-    if not owner:
-        raise HTTPException(status_code=404, detail=f"User {owner_id} not found")
-
     content_bytes = await file.read()
     lines = content_bytes.decode("utf-8").splitlines()
     created = []
@@ -404,7 +416,7 @@ async def import_notes(
             title=title,
             content=content,
             tag="imported",
-            owner_id=owner_id,
+            owner_id=current_user.id,
         )
         new_note = crud.create_note(db, note_data)
         created.append(new_note.id)

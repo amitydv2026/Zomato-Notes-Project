@@ -33,7 +33,8 @@ class NoteCreate(BaseModel):
     title: str = Field(min_length=1, max_length=120)
     content: str = Field(min_length=1)
     tag: Optional[str] = None
-    owner_id: int
+    # owner_id is injected server-side from the JWT; callers must NOT supply it.
+    owner_id: Optional[int] = None
 
 
 class NoteUpdate(BaseModel):
@@ -71,6 +72,8 @@ class LoginResponse(BaseModel):
     id: int
     name: str
     email: EmailStr
+    access_token: str
+    token_type: str = "bearer"
 
 
 class ChatMessage(BaseModel):

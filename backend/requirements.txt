@@ -13,6 +13,10 @@ pydantic[email]==2.13.4
 python-multipart==0.0.9        # required for FastAPI UploadFile
 python-dotenv==1.2.2           # loads .env variables
 
+# ── Authentication ──────────────────────────────────────────────────────────────
+python-jose[cryptography]==3.3.0   # JWT encode / decode (HS256)
+bcrypt==4.2.1                      # bcrypt password hashing (used directly, no passlib wrapper)
+
 # ── AI / LLM (Part 3) ─────────────────────────────────────────────────────────
 groq                           # Groq free-tier LLM client
 sentence-transformers==3.0.0   # local semantic search
