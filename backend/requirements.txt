@@ -14,7 +14,7 @@ python-multipart==0.0.9        # required for FastAPI UploadFile
 python-dotenv==1.2.2           # loads .env variables
 
 # ── Authentication ──────────────────────────────────────────────────────────────
-python-jose[cryptography]==3.3.0   # JWT encode / decode (HS256)
+python-jose[cryptography]==3.5.0   # JWT encode / decode (HS256) — 3.5.0 uses timezone-aware datetime
 bcrypt==4.2.1                      # bcrypt password hashing (used directly, no passlib wrapper)
 
 # ── AI / LLM (Part 3) ─────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 # Test-only dependencies (not installed in production).
 # Install with:  pip install -r requirements-dev.txt
 pytest
-httpx              # required by FastAPI's TestClient
+httpx2             # starlette TestClient — httpx2 replaces httpx (avoids deprecation warning)
 pytest-cov         # optional coverage reports
