@@ -93,7 +93,24 @@ app.add_middleware(
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next) -> Response:
     start = time.perf_counter()
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        # If the route crashes, manually build a CORS-safe 500 response
+        # so the browser sees the error correctly instead of a CORS block.
+        logger.error(f"Unhandled exception in {request.method} {request.url.path}: {exc!r}")
+        origin = request.headers.get("origin", "")
+        cors_origin = origin if origin in ALLOWED_ORIGINS else ALLOWED_ORIGINS[0]
+        from starlette.responses import JSONResponse
+        response = JSONResponse(
+            status_code=500,
+            content={"detail": f"Internal server error: {type(exc).__name__}"},
+            headers={
+                "Access-Control-Allow-Origin": cors_origin,
+                "Access-Control-Allow-Credentials": "true",
+            },
+        )
+        return response
     elapsed = time.perf_counter() - start
     response.headers["X-Process-Time"] = f"{elapsed:.6f}s"
     return response
