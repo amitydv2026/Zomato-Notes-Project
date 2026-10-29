@@ -33,8 +33,10 @@ from auth import (
     create_access_token,
     get_current_user,
     verify_password,
+    hash_password,
 )
 from database import Base, engine, get_db
+from email_service import send_reset_email
 from algorithms import (
     binary_search_iterative,
     binary_search_recursive,
@@ -171,6 +173,50 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
         access_token=token,
         token_type="bearer",
     )
+
+
+@app.post("/auth/forgot-password", status_code=200, tags=["Auth"])
+def forgot_password(
+    body: schemas.ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Request a password-reset link.
+
+    Always returns 200 regardless of whether the email exists — this
+    prevents user-enumeration attacks (attacker cannot tell if an email
+    is registered by watching the response).
+
+    If SMTP is configured the reset link is emailed; otherwise it is
+    printed to server logs (console mode for development / free tier).
+    """
+    user = crud.get_user_by_email(db, body.email)
+    if user:
+        token_row = crud.create_reset_token(db, user.id)
+        send_reset_email(body.email, user.name, token_row.token)
+    # Always return the same message — don't leak whether email exists
+    return {"detail": "If that email is registered you will receive a reset link shortly."}
+
+
+@app.post("/auth/reset-password", status_code=200, tags=["Auth"])
+def reset_password(
+    body: schemas.ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Set a new password using a valid reset token.
+
+    The token is single-use and expires after 30 minutes.
+    Returns 400 if the token is invalid, already used, or expired.
+    """
+    token_row = crud.get_valid_reset_token(db, body.token)
+    if not token_row:
+        raise HTTPException(
+            status_code=400,
+            detail="Reset link is invalid or has expired. Please request a new one.",
+        )
+    crud.consume_reset_token(db, token_row, hash_password(body.new_password))
+    return {"detail": "Password updated successfully. You can now sign in with your new password."}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

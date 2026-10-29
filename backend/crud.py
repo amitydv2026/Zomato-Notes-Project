@@ -28,6 +28,54 @@ def get_user_by_email(db: Session, email: str) -> Optional[models.User]:
     return db.query(models.User).filter(models.User.email == email).first()
 
 
+# ── Password reset tokens ──────────────────────────────────────────────────────
+
+def create_reset_token(db: Session, user_id: int) -> models.PasswordResetToken:
+    """Create a new 30-minute reset token, invalidating any existing ones for this user."""
+    import secrets
+    from datetime import datetime, timezone, timedelta
+
+    # Invalidate any existing unused tokens for this user
+    db.query(models.PasswordResetToken).filter(
+        models.PasswordResetToken.user_id == user_id,
+        models.PasswordResetToken.used == False,  # noqa: E712
+    ).update({"used": True})
+
+    token = models.PasswordResetToken(
+        user_id    = user_id,
+        token      = secrets.token_urlsafe(32),          # 256-bit URL-safe token
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=30),
+        used       = False,
+    )
+    db.add(token)
+    db.commit()
+    db.refresh(token)
+    return token
+
+
+def get_valid_reset_token(db: Session, token_str: str) -> Optional[models.PasswordResetToken]:
+    """Return the token row if it exists, is unused, and has not expired."""
+    from datetime import datetime, timezone
+    row = db.query(models.PasswordResetToken).filter(
+        models.PasswordResetToken.token == token_str,
+        models.PasswordResetToken.used  == False,   # noqa: E712
+    ).first()
+    if row is None:
+        return None
+    if datetime.now(timezone.utc) > row.expires_at.replace(tzinfo=timezone.utc):
+        return None   # expired
+    return row
+
+
+def consume_reset_token(db: Session, token_row: models.PasswordResetToken, new_password_hash: str) -> None:
+    """Mark token as used and update the user's password."""
+    user = db.query(models.User).filter(models.User.id == token_row.user_id).first()
+    if user:
+        user.password = new_password_hash
+    token_row.used = True
+    db.commit()
+
+
 # ── Notes ─────────────────────────────────────────────────────────────────────
 
 def create_note(db: Session, note: schemas.NoteCreate) -> models.Note:

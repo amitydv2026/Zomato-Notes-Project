@@ -37,3 +37,24 @@ services:
 
       - key: AI_API_KEY
         sync: false          # paste your Groq API key in Render UI
+
+      # ── Email — Password Reset ─────────────────────────────────────────────
+      # Leave SMTP_HOST blank → reset link is printed to Render logs (console mode)
+      # For real email, sign up free at https://app.brevo.com → SMTP & API → SMTP
+      - key: SMTP_HOST
+        sync: false          # e.g. smtp-relay.brevo.com
+
+      - key: SMTP_PORT
+        value: "587"
+
+      - key: SMTP_USER
+        sync: false          # your Brevo login email
+
+      - key: SMTP_PASSWORD
+        sync: false          # your Brevo SMTP key (not login password)
+
+      - key: EMAIL_FROM
+        sync: false          # e.g. noreply@yourdomain.com
+
+      - key: FRONTEND_URL
+        value: "https://amitydv2026.github.io/Zomato-Notes-Project"

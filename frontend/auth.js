@@ -192,3 +192,160 @@ signupForm.addEventListener("submit", async (e) => {
     btn.textContent = "Create Account";
   }
 });
+
+// ── Forgot / Reset password ────────────────────────────────────────────────────
+
+const forgotForm  = document.getElementById("forgot-form");
+const resetForm   = document.getElementById("reset-form");
+
+// ── Show / hide helpers ───────────────────────────────────────────────────────
+function showForgotForm() {
+  loginForm.classList.add("hidden");
+  signupForm.classList.add("hidden");
+  resetForm.classList.add("hidden");
+  forgotForm.classList.remove("hidden");
+  document.getElementById("forgot-error").textContent   = "";
+  const s = document.getElementById("forgot-success");
+  if (s) s.style.display = "none";
+  document.getElementById("forgot-email").value = document.getElementById("login-email").value || "";
+  document.getElementById("forgot-email").focus();
+}
+
+function showResetForm() {
+  loginForm.classList.add("hidden");
+  signupForm.classList.add("hidden");
+  forgotForm.classList.add("hidden");
+  resetForm.classList.remove("hidden");
+  document.getElementById("reset-error").textContent = "";
+}
+
+// Trigger forgot form from "Forgot password?" link
+document.getElementById("forgot-pw-link").addEventListener("click", (e) => {
+  e.preventDefault();
+  showForgotForm();
+});
+
+// Back to login from forgot form
+document.getElementById("back-to-login").addEventListener("click", (e) => {
+  e.preventDefault();
+  switchToLogin();
+});
+
+// ── Check URL for ?reset=<token> on page load ──────────────────────────────
+(function checkResetToken() {
+  const params = new URLSearchParams(window.location.search);
+  const token  = params.get("reset");
+  if (token) {
+    // Store token on the reset form so the submit handler can read it
+    resetForm.dataset.token = token;
+    showResetForm();
+  }
+})();
+
+// ── Forgot password submit ────────────────────────────────────────────────────
+forgotForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorEl   = document.getElementById("forgot-error");
+  const successEl = document.getElementById("forgot-success");
+  errorEl.textContent = "";
+  successEl.style.display = "none";
+
+  const email = document.getElementById("forgot-email").value.trim();
+  if (!email) { errorEl.textContent = "Please enter your email address."; return; }
+
+  const btn = document.getElementById("forgot-btn");
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 15000);
+
+    const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+      signal: controller.signal,
+    });
+    clearTimeout(tid);
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      errorEl.textContent = data.detail || `Error (${res.status}). Please try again.`;
+      return;
+    }
+    // Always show the same message regardless of whether the email exists
+    successEl.textContent = "✅ If that email is registered, a reset link is on its way. Check your inbox (and spam folder).";
+    successEl.style.display = "block";
+    btn.textContent = "Sent!";
+    return;  // leave button disabled — job done
+
+  } catch (err) {
+    errorEl.textContent = err.name === "AbortError"
+      ? "Request timed out. Try again in a moment."
+      : `Connection error: ${err.message}`;
+  } finally {
+    if (btn.textContent !== "Sent!") {
+      btn.disabled = false;
+      btn.textContent = "Send Reset Link";
+    }
+  }
+});
+
+// ── Reset password submit ─────────────────────────────────────────────────────
+resetForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorEl   = document.getElementById("reset-error");
+  const successEl = document.getElementById("reset-success");
+  errorEl.textContent = "";
+  successEl.style.display = "none";
+
+  const token    = resetForm.dataset.token || "";
+  const newPw    = document.getElementById("reset-password").value;
+  const confirmPw = document.getElementById("reset-password-confirm").value;
+
+  if (!token)          { errorEl.textContent = "Invalid reset link. Please request a new one."; return; }
+  if (newPw.length < 8) { errorEl.textContent = "Password must be at least 8 characters."; return; }
+  if (newPw !== confirmPw) { errorEl.textContent = "Passwords do not match."; return; }
+
+  const btn = document.getElementById("reset-btn");
+  btn.disabled = true;
+  btn.textContent = "Updating…";
+
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 15000);
+
+    const res = await fetch(`${API_BASE}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, new_password: newPw }),
+      signal: controller.signal,
+    });
+    clearTimeout(tid);
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      errorEl.textContent = data.detail || `Error (${res.status}). Please try again.`;
+      btn.disabled = false;
+      btn.textContent = "Update Password";
+      return;
+    }
+
+    // Success — show message then redirect to login after 2s
+    successEl.textContent = "✅ Password updated! Redirecting to sign in…";
+    successEl.style.display = "block";
+
+    // Clean the token from the URL so refresh doesn't re-show this form
+    window.history.replaceState({}, "", window.location.pathname);
+
+    setTimeout(() => switchToLogin("✅ Password updated! Please sign in with your new password."), 2000);
+
+  } catch (err) {
+    errorEl.textContent = err.name === "AbortError"
+      ? "Request timed out. Try again in a moment."
+      : `Connection error: ${err.message}`;
+    btn.disabled = false;
+    btn.textContent = "Update Password";
+  }
+});

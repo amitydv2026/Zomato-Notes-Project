@@ -276,3 +276,12 @@ body.auth-page {
   .auth-title { font-size: 1.5rem; }
 }
 
+
+/* ── Forgot password link ─────────────────────────────────────── */
+.forgot-link {
+  font-size: 0.8rem;
+  color: var(--red);
+  font-weight: 600;
+  text-decoration: none;
+}
+.forgot-link:hover { text-decoration: underline; }
