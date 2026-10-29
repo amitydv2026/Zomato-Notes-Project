@@ -1152,8 +1152,9 @@ document.getElementById("import-btn").addEventListener("click", async () => {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch(`${API_BASE}/notes/import?owner_id=${ownerId}`, {
+    const res = await fetch(`${API_BASE}/notes/import`, {
       method: "POST",
+      headers: authHeadersMultipart(),
       body: formData,
     });
 

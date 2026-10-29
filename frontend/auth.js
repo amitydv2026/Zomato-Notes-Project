@@ -1,6 +1,6 @@
 
 // ── Redirect if already logged in ─────────────────────────────────────────────
-if (localStorage.getItem("zn_user_id")) {
+if (localStorage.getItem("zn_user_id") && localStorage.getItem("zn_token")) {
   window.location.replace("index.html");
 }
 

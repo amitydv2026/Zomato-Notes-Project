@@ -3,8 +3,7 @@
 // Local dev:  http://127.0.0.1:8000
 const API_BASE = "https://zomato-notes-backend.onrender.com";
 
-// Helper: returns the Authorization header for JWT-protected requests.
-// Reads the token stored in localStorage after login.
+// Returns headers for JSON requests with JWT Bearer token.
 function authHeaders(extra = {}) {
   const token = localStorage.getItem("zn_token");
   return {
@@ -12,4 +11,11 @@ function authHeaders(extra = {}) {
     ...(token ? { "Authorization": `Bearer ${token}` } : {}),
     ...extra,
   };
+}
+
+// Returns headers for multipart/FormData requests (no Content-Type —
+// the browser sets it automatically with the correct boundary).
+function authHeadersMultipart() {
+  const token = localStorage.getItem("zn_token");
+  return token ? { "Authorization": `Bearer ${token}` } : {};
 }

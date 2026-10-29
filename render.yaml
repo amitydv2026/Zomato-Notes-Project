@@ -15,7 +15,17 @@ services:
         sync: false          # paste your Supabase connection string in Render UI
 
       - key: SECRET_TOKEN
-        sync: false          # paste a strong random token in Render UI
+        sync: false          # kept for reference; no longer used for auth
+
+      # ── JWT Authentication ─────────────────────────────────────────────────
+      - key: JWT_SECRET_KEY
+        sync: false          # generate with: openssl rand -hex 32
+
+      - key: JWT_ALGORITHM
+        value: "HS256"
+
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "1440"        # 24 hours
 
       # ── CORS: add your GitHub Pages URL here after deploying frontend ──────
       - key: ALLOWED_ORIGINS
